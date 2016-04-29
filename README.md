@@ -23,6 +23,16 @@ var (
 )
 ```
 
+Which, when served over HTTP as JSON will look like the following:
+
+```json
+{
+   "type": "about:blank",
+   "title": "Not Found",
+   "status": 404
+}
+```
+
 ### Detailed Errors
 New errors can also be created a head of time, or on the fly like so:
 
@@ -33,8 +43,19 @@ import (
 
 func NoSuchUser() *problems.DefaultProblem {
   nosuch := problems.NewStatusProblem(404)
-  nosuch.Detail = "Sorry, that user does not exist"
+  nosuch.Detail = "Sorry, that user does not exist."
   return nosuch
+}
+```
+
+Which, when served over HTTP as JSON will look like the following:
+
+```json
+{
+   "type": "about:blank",
+   "title": "Not Found",
+   "status": 404,
+   "detail": "Sorry, that user does not exist."
 }
 ```
 
@@ -65,6 +86,18 @@ func (cp *CreditProblem) ProblemType() (*url.URL, error) {
 
 func (cp *CreditProblem) ProblemTitle() string {
 	return cp.Title
+}
+```
+
+Which, when served over HTTP as JSON will look like the following:
+
+```json
+{
+   "type": "about:blank",
+   "title": "Unauthorized",
+   "status": 401,
+   "balance": 30,
+   "accounts": ["/account/12345", "/account/67890"]
 }
 ```
 
