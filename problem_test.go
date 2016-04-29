@@ -70,3 +70,51 @@ func TestValidateProblem(t *testing.T) {
 		t.Errorf("%q was allowed as a valid URI", badURI)
 	}
 }
+
+type creditProblem struct {
+	DefaultProblem
+
+	Balance  float64  `json:"balance"`
+	Accounts []string `json:"accounts"`
+}
+
+func (cp *creditProblem) ProblemType() (*url.URL, error) {
+	u, err := url.Parse(cp.Type)
+	if err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
+func (cp *creditProblem) ProblemTitle() string {
+	return cp.Title
+}
+
+func TestCreditProblem(t *testing.T) {
+	problem := &creditProblem{
+		DefaultProblem: DefaultProblem{Type: DefaultURL,
+			Status: 401,
+			Title:  http.StatusText(http.StatusUnauthorized),
+			Detail: "You dun did somethin' wrong.",
+		},
+		Balance:  30,
+		Accounts: []string{"/account/12345", "/account/67890"},
+	}
+
+	typ, err := problem.ProblemType()
+	if err != nil {
+		t.Errorf("Unable to read problem type")
+	}
+	if typ.String() != problem.Type {
+		t.Errorf("Problem Type's did not match")
+	}
+
+	if problem.ProblemTitle() != problem.Title {
+		t.Errorf("Problem Title's did not match")
+	}
+
+	err = ValidateProblem(problem)
+	if err != nil {
+		t.Errorf("problem is not valid")
+	}
+}
