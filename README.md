@@ -2,6 +2,8 @@
 Problems is an RFC-7807 compliant library for describing HTTP errors, written
 purely in Go. For more information see [RFC-7807](https://tools.ietf.org/html/rfc7807).
 
+[![GoDoc](https://godoc.org/github.com/moogar0880/problems?status.svg)](https://godoc.org/github.com/moogar0880/problems)
+
 ## Usage
 The problems library exposes an assortment of interfaces, structs, and functions
 for defining and using HTTP Problem detail resources.
