@@ -80,7 +80,7 @@ func NewProblem() *DefaultProblem {
 func NewStatusProblem(status int16) *DefaultProblem {
 	problem := NewProblem()
 	problem.Status = status
-	problem.Title = http.StatusText(404)
+	problem.Title = http.StatusText(int(status))
 	return problem
 }
 
