@@ -26,6 +26,13 @@ type Problem interface {
 	ProblemTitle() string
 }
 
+// StatusProblem is the interface describing a problem with an associated
+// Status code
+type StatusProblem interface {
+	Problem
+	ProblemStatus() int
+}
+
 // ValidateProblem ensures that the provided Problem implementation meets the
 // Problem description requirements. Which means that the Type is a valid uri,
 // and that the Title be a non-empty string. Should the provided Problem be in
@@ -58,7 +65,7 @@ type DefaultProblem struct {
 	Title string `json:"title"`
 
 	// The HTTP status code for this occurrence of the problem
-	Status int16 `json:"status,omitempty"`
+	Status int `json:"status,omitempty"`
 
 	// A human-readable explanation specific to this occurrence of the problem.
 	Detail string `json:"detail,omitempty"`
@@ -70,17 +77,25 @@ type DefaultProblem struct {
 
 // NewProblem returns a new instance of a DefaultProblem
 func NewProblem() *DefaultProblem {
-	prob := &DefaultProblem{Type: DefaultURL, Title: ""}
-	return prob
+	problem := &DefaultProblem{Type: DefaultURL, Title: ""}
+	return problem
 }
 
 // NewStatusProblem will generate a default problem for the provided HTTP status
 // code. The Problem's Status field will be set to match the status argument,
 // and the Title will be set to the default Go status text for that code.
-func NewStatusProblem(status int16) *DefaultProblem {
-	problem := NewProblem()
-	problem.Status = status
-	problem.Title = http.StatusText(int(status))
+func NewStatusProblem(status int) *DefaultProblem {
+	problem := &DefaultProblem{Type: DefaultURL,
+		Title:  http.StatusText(int(status)),
+		Status: status}
+	return problem
+}
+
+// NewDetailedProblem returns a new DefaultProblem with a Detail string set for
+// a more detailed explanation of the problem being returned
+func NewDetailedProblem(status int, details string) *DefaultProblem {
+	problem := NewStatusProblem(status)
+	problem.Detail = details
 	return problem
 }
 
@@ -97,4 +112,10 @@ func (p *DefaultProblem) ProblemType() (*url.URL, error) {
 // ProblemTitle returns the unique title field for this Problem
 func (p *DefaultProblem) ProblemTitle() string {
 	return p.Title
+}
+
+// ProblemStatus allows the DefaultStatusProblem to implement the StatusProblem
+// interface, returning the Status code for this problem
+func (p *DefaultProblem) ProblemStatus() int {
+	return p.Status
 }
