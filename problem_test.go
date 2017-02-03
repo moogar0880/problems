@@ -42,6 +42,10 @@ func (p badProblemType) ProblemTitle() string {
 	return "something valid"
 }
 
+func (p badProblemType) Error() string {
+	return ""
+}
+
 type badProblemTitle struct{}
 
 func (p badProblemTitle) ProblemType() (*url.URL, error) {
@@ -49,6 +53,10 @@ func (p badProblemTitle) ProblemType() (*url.URL, error) {
 }
 
 func (p badProblemTitle) ProblemTitle() string {
+	return ""
+}
+
+func (p badProblemTitle) Error() string {
 	return ""
 }
 
@@ -116,5 +124,22 @@ func TestCreditProblem(t *testing.T) {
 	err = ValidateProblem(problem)
 	if err != nil {
 		t.Errorf("problem is not valid")
+	}
+}
+
+func TestErrorInterface(t *testing.T) {
+	var i interface{} = &DefaultProblem{Type: DefaultURL,
+		Status: 401,
+		Title:  http.StatusText(http.StatusUnauthorized),
+		Detail: "Detail Message.",
+	}
+	p, ok := i.(error)
+	if !ok {
+		t.Errorf("DefaultProblem does not implement error interface")
+	}
+
+	expected := http.StatusText(http.StatusUnauthorized) + " (401) - Detail Message."
+	if p.Error() != expected {
+		t.Errorf("Error message was not what we were expecting. Expected '%s', got '%s'", expected, p.Error())
 	}
 }

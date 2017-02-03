@@ -2,6 +2,7 @@ package problems
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 )
@@ -24,6 +25,7 @@ const (
 type Problem interface {
 	ProblemType() (*url.URL, error)
 	ProblemTitle() string
+	Error() string
 }
 
 // StatusProblem is the interface describing a problem with an associated
@@ -118,4 +120,11 @@ func (p *DefaultProblem) ProblemTitle() string {
 // interface, returning the Status code for this problem
 func (p *DefaultProblem) ProblemStatus() int {
 	return p.Status
+}
+
+// Implement Error() so it can satisfy the default error Interface
+// It returns a string in the form of:
+//     <Title> (Status) - <Detail>
+func (p *DefaultProblem) Error() string {
+	return fmt.Sprintf("%s (%d) - %s", p.Title, p.Status, p.Detail)
 }
