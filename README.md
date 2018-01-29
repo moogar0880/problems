@@ -125,14 +125,14 @@ import (
 )
 
 var (
-	Unauthorized = problems.NewStatusError(401)
+	Unauthorized = problems.NewStatusProblem(401)
 )
 
 func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/secrets", problems.ProblemHandler(Unauthorized))
 
-	server := http.Server{Handler: mux, Addr: ":80"}
+	server := http.Server{Handler: mux, Addr: ":8080"}
 	server.ListenAndServe()
 }
 ```
