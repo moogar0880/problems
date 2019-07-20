@@ -16,7 +16,7 @@ function
 
 ```go
 import (
-  "github.com/moogar0880/problems"
+	"github.com/moogar0880/problems"
 )
 
 var (
@@ -42,13 +42,13 @@ New errors can also be created a head of time, or on the fly like so:
 
 ```go
 import (
-  "github.com/moogar0880/problems"
+	"github.com/moogar0880/problems"
 )
 
 func NoSuchUser() *problems.DefaultProblem {
-  nosuch := problems.NewStatusProblem(404)
-  nosuch.Detail = "Sorry, that user does not exist."
-  return nosuch
+	nosuch := problems.NewStatusProblem(404)
+	nosuch.Detail = "Sorry, that user does not exist."
+	return nosuch
 }
 ```
 
@@ -70,14 +70,14 @@ library by implementing the `Problem` interface:
 
 ```go
 import (
-  "github.com/moogar0880/problems"
+	"github.com/moogar0880/problems"
 )
 
 type CreditProblem struct {
-  problems.DefaultProblem
+	problems.DefaultProblem
 
-  Balance float64
-  Accounts []string
+    Balance  float64
+    Accounts []string
 }
 
 func (cp *CreditProblem) ProblemType() (*url.URL, error) {
@@ -119,14 +119,12 @@ functioning `HandlerFunc` that will server that error.
 package main
 
 import (
-  "net/http"
+	"net/http"
 
-  "github.com/moogar0880/problems"
+    "github.com/moogar0880/problems"
 )
 
-var (
-	Unauthorized = problems.NewStatusProblem(401)
-)
+var Unauthorized = problems.NewStatusProblem(401)
 
 func main() {
 	mux := http.NewServeMux()
