@@ -7,23 +7,21 @@ import (
 	"testing"
 )
 
+var unAuthDetails = "you are unauthorized to access this resource"
+
 func TestDefaultProblem(t *testing.T) {
-	problem := &DefaultProblem{Type: DefaultURL,
-		Status: 401,
-		Title:  http.StatusText(http.StatusUnauthorized),
-		Detail: "You dun did somethin' wrong.",
-	}
+	problem := NewDetailedProblem(http.StatusUnauthorized, unAuthDetails)
 
 	typ, err := problem.ProblemType()
 	if err != nil {
 		t.Errorf("Unable to read problem type")
 	}
-	if typ.String() != problem.Type {
-		t.Errorf("Problem Type's did not match")
+	if typ != nil && typ.String() != problem.Type {
+		t.Errorf("Problem Types did not match")
 	}
 
 	if problem.ProblemTitle() != problem.Title {
-		t.Errorf("Problem Title's did not match")
+		t.Errorf("Problem Titles did not match")
 	}
 
 	err = ValidateProblem(problem)
@@ -35,7 +33,7 @@ func TestDefaultProblem(t *testing.T) {
 type badProblemType struct{}
 
 func (p badProblemType) ProblemType() (*url.URL, error) {
-	return nil, errors.New("I'm a bad problem type")
+	return nil, errors.New("i am a bad problem type")
 }
 
 func (p badProblemType) ProblemTitle() string {
@@ -92,11 +90,7 @@ func (cp *creditProblem) ProblemTitle() string {
 
 func TestCreditProblem(t *testing.T) {
 	problem := &creditProblem{
-		DefaultProblem: DefaultProblem{Type: DefaultURL,
-			Status: 401,
-			Title:  http.StatusText(http.StatusUnauthorized),
-			Detail: "You dun did somethin' wrong.",
-		},
+		DefaultProblem: *NewDetailedProblem(http.StatusUnauthorized, unAuthDetails),
 		Balance:  30,
 		Accounts: []string{"/account/12345", "/account/67890"},
 	}
@@ -105,12 +99,12 @@ func TestCreditProblem(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unable to read problem type")
 	}
-	if typ.String() != problem.Type {
-		t.Errorf("Problem Type's did not match")
+	if typ != nil && typ.String() != problem.Type {
+		t.Errorf("Problem Types did not match")
 	}
 
 	if problem.ProblemTitle() != problem.Title {
-		t.Errorf("Problem Title's did not match")
+		t.Errorf("Problem Titles did not match")
 	}
 
 	err = ValidateProblem(problem)

@@ -15,9 +15,7 @@ You can define basic Problem details up front by using the `NewStatusProblem`
 function
 
 ```go
-import (
-	"github.com/moogar0880/problems"
-)
+import "github.com/moogar0880/problems"
 
 var (
   // The NotFound problem will be built with an appropriate status code and
@@ -41,9 +39,7 @@ Which, when served over HTTP as JSON will look like the following:
 New errors can also be created a head of time, or on the fly like so:
 
 ```go
-import (
-	"github.com/moogar0880/problems"
-)
+import "github.com/moogar0880/problems"
 
 func NoSuchUser() *problems.DefaultProblem {
 	nosuch := problems.NewStatusProblem(404)
@@ -69,9 +65,7 @@ expansion of the problem resources. This can be accomplished through this
 library by implementing the `Problem` interface:
 
 ```go
-import (
-	"github.com/moogar0880/problems"
-)
+import "github.com/moogar0880/problems"
 
 type CreditProblem struct {
 	problems.DefaultProblem
