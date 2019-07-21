@@ -2,7 +2,7 @@ package problems_test
 
 import (
 	"encoding/json"
-	"os"
+	"fmt"
 
 	"github.com/moogar0880/problems"
 )
@@ -10,7 +10,7 @@ import (
 func ExampleNewStatusProblem() {
 	notFound := problems.NewStatusProblem(404)
 	b, _ := json.MarshalIndent(notFound, "", "  ")
-	os.Stdout.Write(b)
+	fmt.Println(string(b))
 	// Output: {
 	//   "type": "about:blank",
 	//   "title": "Not Found",
@@ -22,7 +22,7 @@ func ExampleNewStatusProblem_detailed() {
 	notFound := problems.NewStatusProblem(404)
 	notFound.Detail = "The item you've requested either does not exist or has been deleted."
 	b, _ := json.MarshalIndent(notFound, "", "  ")
-	os.Stdout.Write(b)
+	fmt.Println(string(b))
 	// Output: {
 	//   "type": "about:blank",
 	//   "title": "Not Found",

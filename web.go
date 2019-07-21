@@ -11,7 +11,7 @@ import (
 func ProblemHandler(p Problem) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", ProblemMediaType)
-		json.NewEncoder(w).Encode(p)
+		_ = json.NewEncoder(w).Encode(p)
 	}
 }
 
@@ -20,7 +20,7 @@ func ProblemHandler(p Problem) http.HandlerFunc {
 func XMLProblemHandler(p Problem) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", ProblemMediaTypeXML)
-		xml.NewEncoder(w).Encode(p)
+		_ = xml.NewEncoder(w).Encode(p)
 	}
 }
 
@@ -32,7 +32,7 @@ func StatusProblemHandler(p StatusProblem) http.HandlerFunc {
 		if p.ProblemStatus() != 0 {
 			w.WriteHeader(p.ProblemStatus())
 		}
-		json.NewEncoder(w).Encode(p)
+		_ = json.NewEncoder(w).Encode(p)
 	}
 }
 
@@ -44,6 +44,6 @@ func XMLStatusProblemHandler(p StatusProblem) http.HandlerFunc {
 		if p.ProblemStatus() != 0 {
 			w.WriteHeader(p.ProblemStatus())
 		}
-		xml.NewEncoder(w).Encode(p)
+		_ = xml.NewEncoder(w).Encode(p)
 	}
 }

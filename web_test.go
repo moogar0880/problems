@@ -32,7 +32,7 @@ type MyDecoder interface {
 }
 
 func TestJSONProblems(t *testing.T) {
-	notFound := NewStatusProblem(404)
+	notFound := NewStatusProblem(http.StatusNotFound)
 	notFound.Detail = "That thing doesn't exist."
 
 	server := testServer(ProblemHandler(notFound))
@@ -43,9 +43,8 @@ func TestJSONProblems(t *testing.T) {
 		t.Error(err)
 	}
 
-	decoder := json.NewDecoder(w.Body)
 	var response DefaultProblem
-	err = decoder.Decode(&response)
+	err = json.NewDecoder(w.Body).Decode(&response)
 	if err != nil {
 		t.Error(err)
 	}
@@ -64,7 +63,7 @@ func TestJSONProblems(t *testing.T) {
 }
 
 func TestJSONStatusProblems(t *testing.T) {
-	notFound := NewStatusProblem(404)
+	notFound := NewStatusProblem(http.StatusNotFound)
 	notFound.Detail = "That thing doesn't exist."
 
 	server := testServer(StatusProblemHandler(notFound))
@@ -76,12 +75,11 @@ func TestJSONStatusProblems(t *testing.T) {
 	}
 
 	if w.StatusCode != notFound.Status {
-	    t.Errorf("Expected HTTP status code to be %d, got %d", notFound.Status, w.StatusCode)
+		t.Errorf("Expected HTTP status code to be %d, got %d", notFound.Status, w.StatusCode)
 	}
 
-	decoder := json.NewDecoder(w.Body)
 	var response DefaultProblem
-	err = decoder.Decode(&response)
+	err = json.NewDecoder(w.Body).Decode(&response)
 	if err != nil {
 		t.Error(err)
 	}
@@ -100,7 +98,7 @@ func TestJSONStatusProblems(t *testing.T) {
 }
 
 func TestXMLProblems(t *testing.T) {
-	notFound := NewStatusProblem(404)
+	notFound := NewStatusProblem(http.StatusNotFound)
 	notFound.Detail = "That thing doesn't exist."
 
 	server := testServer(XMLProblemHandler(notFound))
@@ -111,9 +109,8 @@ func TestXMLProblems(t *testing.T) {
 		t.Error(err)
 	}
 
-	decoder := xml.NewDecoder(w.Body)
 	var response DefaultProblem
-	err = decoder.Decode(&response)
+	err = xml.NewDecoder(w.Body).Decode(&response)
 	if err != nil {
 		t.Error(err)
 	}
@@ -144,12 +141,11 @@ func TestXMLStatusProblems(t *testing.T) {
 	}
 
 	if w.StatusCode != notFound.Status {
-	    t.Errorf("Expected HTTP status code to be %d, got %d", notFound.Status, w.StatusCode)
+		t.Errorf("Expected HTTP status code to be %d, got %d", notFound.Status, w.StatusCode)
 	}
 
-	decoder := xml.NewDecoder(w.Body)
 	var response DefaultProblem
-	err = decoder.Decode(&response)
+	err = xml.NewDecoder(w.Body).Decode(&response)
 	if err != nil {
 		t.Error(err)
 	}
