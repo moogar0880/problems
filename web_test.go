@@ -27,46 +27,10 @@ func getResponse(uri string, server *httptest.Server) (*http.Response, error) {
 	return res, nil
 }
 
-type MyDecoder interface {
-	Decode(v interface{}) error
-}
-
 func TestJSONProblems(t *testing.T) {
-	notFound := NewStatusProblem(http.StatusNotFound)
-	notFound.Detail = "That thing doesn't exist."
+	notFound := NewDetailedProblem(http.StatusNotFound, "That thing doesn't exist.")
 
 	server := testServer(ProblemHandler(notFound))
-	defer server.Close()
-
-	w, err := getResponse("/", server)
-	if err != nil {
-		t.Error(err)
-	}
-
-	var response DefaultProblem
-	err = json.NewDecoder(w.Body).Decode(&response)
-	if err != nil {
-		t.Error(err)
-	}
-
-	if response.Status != notFound.Status {
-		t.Errorf("Expected response Status to be %d, but got %d", notFound.Status, response.Status)
-	}
-
-	if response.Title != notFound.Title {
-		t.Errorf("Expected response Title to be %q, but got %q", notFound.Title, response.Title)
-	}
-
-	if response.Detail != notFound.Detail {
-		t.Errorf("Expected response Detail to be %q, but got %q", notFound.Detail, response.Detail)
-	}
-}
-
-func TestJSONStatusProblems(t *testing.T) {
-	notFound := NewStatusProblem(http.StatusNotFound)
-	notFound.Detail = "That thing doesn't exist."
-
-	server := testServer(StatusProblemHandler(notFound))
 	defer server.Close()
 
 	w, err := getResponse("/", server)
@@ -78,7 +42,7 @@ func TestJSONStatusProblems(t *testing.T) {
 		t.Errorf("Expected HTTP status code to be %d, got %d", notFound.Status, w.StatusCode)
 	}
 
-	var response DefaultProblem
+	var response Problem
 	err = json.NewDecoder(w.Body).Decode(&response)
 	if err != nil {
 		t.Error(err)
@@ -98,41 +62,9 @@ func TestJSONStatusProblems(t *testing.T) {
 }
 
 func TestXMLProblems(t *testing.T) {
-	notFound := NewStatusProblem(http.StatusNotFound)
-	notFound.Detail = "That thing doesn't exist."
+	notFound := NewDetailedProblem(http.StatusNotFound, "That thing doesn't exist.")
 
 	server := testServer(XMLProblemHandler(notFound))
-	defer server.Close()
-
-	w, err := getResponse("/", server)
-	if err != nil {
-		t.Error(err)
-	}
-
-	var response DefaultProblem
-	err = xml.NewDecoder(w.Body).Decode(&response)
-	if err != nil {
-		t.Error(err)
-	}
-
-	if response.Status != notFound.Status {
-		t.Errorf("Expected response Status to be %d, but got %d", notFound.Status, response.Status)
-	}
-
-	if response.Title != notFound.Title {
-		t.Errorf("Expected response Title to be %q, but got %q", notFound.Title, response.Title)
-	}
-
-	if response.Detail != notFound.Detail {
-		t.Errorf("Expected response Detail to be %q, but got %q", notFound.Detail, response.Detail)
-	}
-}
-
-func TestXMLStatusProblems(t *testing.T) {
-	notFound := NewStatusProblem(404)
-	notFound.Detail = "That thing doesn't exist."
-
-	server := testServer(XMLStatusProblemHandler(notFound))
 	defer server.Close()
 
 	w, err := getResponse("/", server)
@@ -144,7 +76,7 @@ func TestXMLStatusProblems(t *testing.T) {
 		t.Errorf("Expected HTTP status code to be %d, got %d", notFound.Status, w.StatusCode)
 	}
 
-	var response DefaultProblem
+	var response Problem
 	err = xml.NewDecoder(w.Body).Decode(&response)
 	if err != nil {
 		t.Error(err)
