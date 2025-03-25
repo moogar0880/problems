@@ -21,9 +21,9 @@ GO_COVERAGE_FILE=cover.out
 GO_TEST_OPTS=-coverprofile $(GO_COVERAGE_FILE)
 GO_TEST_PKGS=./...
 
-.PHONY: all test coverage style
-
-all: test
+.PHONY: clean
+clean:
+	@rm $(GO_COVERAGE_FILE)
 
 .PHONY: godoc
 godoc:
