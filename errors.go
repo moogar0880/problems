@@ -12,14 +12,16 @@ var ErrTitleMustBeSet = fmt.Errorf("%s: problem title must be set", errPrefix)
 // valid URI when it is validated. The inner Err will contain the error
 // returned from attempting to parse the invalid URI.
 type ErrInvalidProblemType struct {
-	Err error
+	Err   error
+	Value string
 }
 
 // NewErrInvalidProblemType returns a new ErrInvalidProblemType instance which
 // wraps the provided error.
-func NewErrInvalidProblemType(e error) error {
+func NewErrInvalidProblemType(value string, e error) error {
 	return &ErrInvalidProblemType{
-		Err: e,
+		Err:   e,
+		Value: value,
 	}
 }
 
