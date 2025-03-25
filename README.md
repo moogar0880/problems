@@ -1,20 +1,23 @@
 # problems
-Problems is an RFC-7807 compliant library for describing HTTP errors, written
-purely in Go. For more information see [RFC-7807](https://tools.ietf.org/html/rfc7807).
+Problems is an RFC-7807 and RFC-9457 compliant library for describing HTTP 
+errors. For more information see [RFC-9457](https://tools.ietf.org/html/rfc9457), 
+and it's predecessor [RFC-7807](https://tools.ietf.org/html/rfc7807).
 
 [![Build Status](https://travis-ci.org/moogar0880/problems.svg?branch=master)](https://travis-ci.org/moogar0880/problems)
 [![Go Report Card](https://goreportcard.com/badge/github.com/moogar0880/problems)](https://goreportcard.com/report/github.com/moogar0880/problems)
 [![GoDoc](https://godoc.org/github.com/moogar0880/problems?status.svg)](https://godoc.org/github.com/moogar0880/problems)
 
 ## Usage
-The problems library exposes an assortment of interfaces, structs, and functions
-for defining and using HTTP Problem detail resources.
+The problems library exposes an assortment of types to aid HTTP service authors
+in defining and using HTTP Problem detail resources.
 
 ### Predefined Errors
 You can define basic Problem details up front by using the `NewStatusProblem`
 function
 
 ```go
+package main
+
 import "github.com/moogar0880/problems"
 
 var (
@@ -39,6 +42,8 @@ Which, when served over HTTP as JSON will look like the following:
 New errors can also be created a head of time, or on the fly like so:
 
 ```go
+package main
+
 import "github.com/moogar0880/problems"
 
 func NoSuchUser() *problems.DefaultProblem {
@@ -59,31 +64,21 @@ Which, when served over HTTP as JSON will look like the following:
 }
 ```
 
-### Expanded Errors
+### Extended Errors
 The specification for these HTTP problems was designed to allow for arbitrary
 expansion of the problem resources. This can be accomplished through this
-library by implementing the `Problem` interface:
+library by either embedding the `Problem` struct in your extension type:
 
 ```go
+package main
+
 import "github.com/moogar0880/problems"
 
 type CreditProblem struct {
-	problems.DefaultProblem
+	problems.Problem
 
-    Balance  float64
-    Accounts []string
-}
-
-func (cp *CreditProblem) ProblemType() (*url.URL, error) {
-	u, err := url.Parse(cp.Type)
-	if err != nil {
-		return nil, err
-	}
-	return u, nil
-}
-
-func (cp *CreditProblem) ProblemTitle() string {
-	return cp.Title
+    Balance  float64  `json:"balance"`
+    Accounts []string `json:"accounts"`
 }
 ```
 
@@ -96,6 +91,47 @@ Which, when served over HTTP as JSON will look like the following:
    "status": 401,
    "balance": 30,
    "accounts": ["/account/12345", "/account/67890"]
+}
+```
+
+Or by using the `problems.ExtendedProblem` type:
+
+```go
+package main
+
+import (
+	"net/http"
+
+	"github.com/moogar0880/problems"
+)
+
+type CreditProblemExt struct {
+	Balance  float64  `json:"balance"`
+	Accounts []string `json:"accounts"`
+}
+
+func main() {
+	problems.NewExt[CreditProblemExt]().
+		WithStatus(http.StatusForbidden).
+		WithDetail("Your account does not have sufficient funds to complete this transaction").
+		WithExtension(CreditProblemExt{
+            Balance:  30,
+            Accounts: []string{"/account/12345", "/account/67890"},
+	    })
+}
+```
+
+Which, when served over HTTP as JSON will look like the following:
+
+```json
+{
+   "type": "about:blank",
+   "title": "Unauthorized",
+   "status": 401, 
+   "extensions": {
+	   "balance": 30,
+	   "accounts": ["/account/12345", "/account/67890"]    
+   }
 }
 ```
 
