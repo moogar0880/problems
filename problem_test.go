@@ -1,114 +1,119 @@
 package problems
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
-	"net/url"
+	"reflect"
 	"testing"
 )
 
-var unAuthDetails = "you are unauthorized to access this resource"
-
-func TestDefaultProblem(t *testing.T) {
-	problem := NewDetailedProblem(http.StatusUnauthorized, unAuthDetails)
-
-	typ, err := problem.ProblemType()
-	if err != nil {
-		t.Errorf("Unable to read problem type")
-	}
-	if typ != nil && typ.String() != problem.Type {
-		t.Errorf("Problem Types did not match")
-	}
-
-	if problem.ProblemTitle() != problem.Title {
-		t.Errorf("Problem Titles did not match")
-	}
-
-	err = ValidateProblem(problem)
-	if err != nil {
-		t.Errorf("problem is not valid")
-	}
-}
-
-type badProblemType struct{}
-
-func (p badProblemType) ProblemType() (*url.URL, error) {
-	return nil, errors.New("i am a bad problem type")
-}
-
-func (p badProblemType) ProblemTitle() string {
-	return "something valid"
-}
-
-type badProblemTitle struct{}
-
-func (p badProblemTitle) ProblemType() (*url.URL, error) {
-	return &url.URL{}, nil
-}
-
-func (p badProblemTitle) ProblemTitle() string {
-	return ""
-}
-
-func TestValidateProblem(t *testing.T) {
-	var err error
-	err = ValidateProblem(badProblemType{})
-	if err == nil {
-		t.Error("Only valid URI's should be allowed as problem types")
-	}
-
-	err = ValidateProblem(badProblemTitle{})
-	if err == nil {
-		t.Errorf("Empty strings should not be allowed as problem titles")
-	}
-
-	badURI := "::/"
-	err = ValidateProblem(&DefaultProblem{Type: badURI})
-	if err == nil {
-		t.Errorf("%q was allowed as a valid URI", badURI)
-	}
-}
-
-type creditProblem struct {
-	DefaultProblem
-
-	Balance  float64  `json:"balance"`
-	Accounts []string `json:"accounts"`
-}
-
-func (cp *creditProblem) ProblemType() (*url.URL, error) {
-	u, err := url.Parse(cp.Type)
-	if err != nil {
-		return nil, err
-	}
-	return u, nil
-}
-
-func (cp *creditProblem) ProblemTitle() string {
-	return cp.Title
-}
-
-func TestCreditProblem(t *testing.T) {
-	problem := &creditProblem{
-		DefaultProblem: *NewDetailedProblem(http.StatusUnauthorized, unAuthDetails),
-		Balance:  30,
-		Accounts: []string{"/account/12345", "/account/67890"},
-	}
-
-	typ, err := problem.ProblemType()
-	if err != nil {
-		t.Errorf("Unable to read problem type")
-	}
-	if typ != nil && typ.String() != problem.Type {
-		t.Errorf("Problem Types did not match")
+func TestProblem(t *testing.T) {
+	tests := []struct {
+		name    string
+		problem *Problem
+		expect  Problem
+	}{
+		{
+			name:    "should support problem with only title and status",
+			problem: NewStatusProblem(http.StatusNotFound),
+			expect: Problem{
+				Type:   DefaultURL,
+				Title:  http.StatusText(http.StatusNotFound),
+				Status: http.StatusNotFound,
+			},
+		},
+		{
+			name:    "should support problem with title, status, and details",
+			problem: NewDetailedProblem(http.StatusNotFound, "couldn't find it"),
+			expect: Problem{
+				Type:   DefaultURL,
+				Title:  http.StatusText(http.StatusNotFound),
+				Status: http.StatusNotFound,
+				Detail: "couldn't find it",
+			},
+		},
+		{
+			name: "should default title to match status code",
+			problem: New().
+				WithType("https://example.com").
+				WithStatus(http.StatusBadRequest).
+				WithDetail("Here are some details").
+				WithInstance("https://example.com/errors/150"),
+			expect: Problem{
+				Type:     "https://example.com",
+				Title:    "Bad Request",
+				Status:   http.StatusBadRequest,
+				Detail:   "Here are some details",
+				Instance: "https://example.com/errors/150",
+			},
+		},
+		{
+			name: "should maintain custom title when setting status code",
+			problem: New().
+				WithType("https://example.com").
+				WithTitle("This is an example").
+				WithStatus(http.StatusBadRequest).
+				WithDetail("Here are some details").
+				WithInstance("https://example.com/errors/150"),
+			expect: Problem{
+				Type:     "https://example.com",
+				Title:    "This is an example",
+				Status:   http.StatusBadRequest,
+				Detail:   "Here are some details",
+				Instance: "https://example.com/errors/150",
+			},
+		},
+		{
+			name: "should format detail message",
+			problem: New().
+				WithType("https://example.com").
+				WithStatus(http.StatusBadRequest).
+				WithDetailf("%q is not a valid integer", "foo").
+				WithInstance("https://example.com/errors/150"),
+			expect: Problem{
+				Type:     "https://example.com",
+				Title:    "Bad Request",
+				Status:   http.StatusBadRequest,
+				Detail:   `"foo" is not a valid integer`,
+				Instance: "https://example.com/errors/150",
+			},
+		},
+		{
+			name: "should use error for detail message",
+			problem: FromError(errors.New("an error occurred")).
+				WithType("https://example.com").
+				WithStatus(http.StatusBadRequest).
+				WithInstance("https://example.com/errors/150"),
+			expect: Problem{
+				Type:     "https://example.com",
+				Title:    "Bad Request",
+				Status:   http.StatusBadRequest,
+				Detail:   "an error occurred",
+				Instance: "https://example.com/errors/150",
+			},
+		},
 	}
 
-	if problem.ProblemTitle() != problem.Title {
-		t.Errorf("Problem Titles did not match")
-	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			data, err := json.Marshal(test.problem)
+			if err != nil {
+				t.Errorf("Error marshalling problem data: %s", err)
+			}
 
-	err = ValidateProblem(problem)
-	if err != nil {
-		t.Errorf("problem is not valid")
+			var problem Problem
+			if err = json.Unmarshal(data, &problem); err != nil {
+				t.Errorf("Error unmarshalling problem data: %s", err)
+			}
+
+			if !reflect.DeepEqual(problem, test.expect) {
+				t.Errorf("problems were not equal: wanted\n%#+v\n but got\n%#+v", test.expect, problem)
+			}
+
+			if len(problem.Error()) == 0 {
+				t.Error("error message should be set but was empty")
+			}
+		})
 	}
 }
