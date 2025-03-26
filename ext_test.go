@@ -2,6 +2,7 @@ package problems
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"testing"
 )
@@ -21,29 +22,66 @@ type creditProblem struct {
 var unAuthDetails = "you are unauthorized to access this resource"
 
 func TestExtend(t *testing.T) {
-	problem := Extend[creditProblemExt](
-		New().
-			WithStatus(http.StatusUnauthorized).
-			WithDetail(unAuthDetails),
-		creditProblemExt{
-			Balance:  30,
-			Accounts: []string{"/account/12345", "/account/67890"},
+	tests := []struct {
+		name       string
+		problem    *ExtendedProblem[creditProblemExt]
+		expectJson string
+	}{
+		{
+			name: "should render properly with Extend",
+			problem: Extend[creditProblemExt](
+				New().
+					WithStatus(http.StatusUnauthorized).
+					WithDetail(unAuthDetails),
+				creditProblemExt{
+					Balance:  30,
+					Accounts: []string{"/account/12345", "/account/67890"},
+				},
+			),
+			expectJson: `{"type":"about:blank","title":"Unauthorized","status":401,"detail":"you are unauthorized to access this resource","extensions":{"balance":30,"accounts":["/account/12345","/account/67890"]}}`,
 		},
-	)
-
-	if _, err := problem.Validate(); err != nil {
-		t.Errorf("problem is not valid: %s", err)
+		{
+			name: "should render properly with Extend",
+			problem: NewExt[creditProblemExt]().
+				WithStatus(http.StatusUnauthorized).
+				WithDetailf("account %d has insufficient funds", 12345).
+				WithExtension(creditProblemExt{
+					Balance:  30,
+					Accounts: []string{"/account/12345", "/account/67890"},
+				}),
+			expectJson: `{"type":"about:blank","title":"Unauthorized","status":401,"detail":"account 12345 has insufficient funds","extensions":{"balance":30,"accounts":["/account/12345","/account/67890"]}}`,
+		},
+		{
+			name: "should render properly with Error",
+			problem: ExtFromError[creditProblemExt](errors.New("an error occurred")).
+				WithStatus(http.StatusUnauthorized).
+				WithExtension(creditProblemExt{
+					Balance:  30,
+					Accounts: []string{"/account/12345", "/account/67890"},
+				}),
+			expectJson: `{"type":"about:blank","title":"Unauthorized","status":401,"detail":"an error occurred","extensions":{"balance":30,"accounts":["/account/12345","/account/67890"]}}`,
+		},
 	}
 
-	data, err := json.Marshal(problem)
-	if err != nil {
-		t.Errorf("failed to marshal extended problem as json: %s", err)
-	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if _, err := test.problem.Validate(); err != nil {
+				t.Errorf("problem is not valid: %s", err)
+			}
 
-	expect := `{"type":"about:blank","title":"Unauthorized","status":401,"detail":"you are unauthorized to access this resource","extensions":{"balance":30,"accounts":["/account/12345","/account/67890"]}}`
+			data, err := json.Marshal(test.problem)
+			if err != nil {
+				t.Errorf("failed to marshal extended problem as json: %s", err)
+			}
 
-	if string(data) != expect {
-		t.Errorf("extended problem does not match expectation:\ngot\n%s\nwant\n%s", string(data), expect)
+			if string(data) != test.expectJson {
+				t.Errorf("extended problem does not match expectation:\ngot\n%s\nwant\n%s", string(data), test.expectJson)
+			}
+
+			if len(test.problem.Error()) == 0 {
+				t.Errorf("extended problem error message was empty")
+			}
+		})
 	}
 }
 

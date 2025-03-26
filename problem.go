@@ -1,6 +1,9 @@
 package problems
 
-import "net/http"
+import (
+	"fmt"
+	"net/http"
+)
 
 const (
 	// ProblemMediaType is the default media type for a Problem response
@@ -43,6 +46,12 @@ type Problem struct {
 // New returns a new Problem instance with the type field set to DefaultURL.
 func New() *Problem {
 	return &Problem{Type: DefaultURL}
+}
+
+// FromError returns a new Problem instance which contains the string version
+// of the provided error as the details of the problem.
+func FromError(err error) *Problem {
+	return New().WithError(err)
 }
 
 // NewStatusProblem will generate a default problem for the provided HTTP status
@@ -89,8 +98,27 @@ func (p *Problem) WithDetail(detail string) *Problem {
 	return p
 }
 
+// WithDetailf behaves identically to WithDetail, but allows consumers to
+// provide a format string and arguments which will be formatted internally.
+func (p *Problem) WithDetailf(format string, args ...interface{}) *Problem {
+	p.Detail = fmt.Sprintf(format, args...)
+	return p
+}
+
+// WithError sets the detail message to the provided error.
+func (p *Problem) WithError(err error) *Problem {
+	p.Detail = err.Error()
+	return p
+}
+
 // WithInstance sets the instance uri to the provided string.
 func (p *Problem) WithInstance(instance string) *Problem {
 	p.Instance = instance
 	return p
+}
+
+// Error implements the error interface and allows a Problem to be used as a
+// native error.
+func (p *Problem) Error() string {
+	return fmt.Sprintf("%s (%d) - %s", p.Title, p.Status, p.Detail)
 }

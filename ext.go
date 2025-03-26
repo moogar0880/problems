@@ -1,6 +1,8 @@
 package problems
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -21,6 +23,12 @@ func NewExt[T any]() *ExtendedProblem[T] {
 	return &ExtendedProblem[T]{
 		Problem: *New(),
 	}
+}
+
+// ExtFromError returns a new ExtendedProblem instance which contains the
+// string version of the provided error as the details of the problem.
+func ExtFromError[T any](err error) *ExtendedProblem[T] {
+	return NewExt[T]().WithError(err)
 }
 
 // Extend allows you to convert a standard Problem instance to an
@@ -62,6 +70,19 @@ func (p *ExtendedProblem[T]) WithDetail(detail string) *ExtendedProblem[T] {
 	return p
 }
 
+// WithDetailf behaves identically to WithDetail, but allows consumers to
+// provide a format string and arguments which will be formatted internally.
+func (p *ExtendedProblem[T]) WithDetailf(format string, args ...interface{}) *ExtendedProblem[T] {
+	p.Detail = fmt.Sprintf(format, args...)
+	return p
+}
+
+// WithError sets the detail message to the provided error.
+func (p *ExtendedProblem[T]) WithError(err error) *ExtendedProblem[T] {
+	p.Detail = err.Error()
+	return p
+}
+
 // WithInstance sets the instance uri to the provided string.
 func (p *ExtendedProblem[T]) WithInstance(instance string) *ExtendedProblem[T] {
 	p.Instance = instance
@@ -72,4 +93,11 @@ func (p *ExtendedProblem[T]) WithInstance(instance string) *ExtendedProblem[T] {
 func (p *ExtendedProblem[T]) WithExtension(ext T) *ExtendedProblem[T] {
 	p.Extensions = ext
 	return p
+}
+
+// Error implements the error interface and allows a Problem to be used as a
+// native error.
+func (p *ExtendedProblem[T]) Error() string {
+	ext, _ := json.Marshal(p.Extensions)
+	return fmt.Sprintf("%s (%d) - %s - %s", p.Title, p.Status, p.Detail, string(ext))
 }
