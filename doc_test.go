@@ -2,6 +2,7 @@ package problems_test
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -29,6 +30,22 @@ func ExampleNewStatusProblem_detailed() {
 	//   "title": "Not Found",
 	//   "status": 404,
 	//   "detail": "The item you've requested either does not exist or has been deleted."
+	// }
+}
+
+func ExampleFromError() {
+	err := func() error {
+		// Some fallible function.
+		return errors.New("something bad happened")
+	}()
+	internalServerError := problems.FromError(err).WithStatus(http.StatusInternalServerError)
+	b, _ := json.MarshalIndent(internalServerError, "", "  ")
+	fmt.Println(string(b))
+	// Output: {
+	//   "type": "about:blank",
+	//   "title": "Internal Server Error",
+	//   "status": 500,
+	//   "detail": "something bad happened"
 	// }
 }
 
