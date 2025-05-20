@@ -61,7 +61,7 @@ func NewStatusProblem(status int) *Problem {
 	return New().WithTitle(http.StatusText(status)).WithStatus(status)
 }
 
-// NewDetailedProblem returns a new DefaultProblem with a Detail string set for
+// NewDetailedProblem returns a new Problem with a Detail string set for
 // a more detailed explanation of the problem being returned.
 func NewDetailedProblem(status int, details string) *Problem {
 	return NewStatusProblem(status).WithDetail(details)

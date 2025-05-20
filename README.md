@@ -46,7 +46,7 @@ package main
 
 import "github.com/moogar0880/problems"
 
-func NoSuchUser() *problems.DefaultProblem {
+func NoSuchUser() *problems.Problem {
 	nosuch := problems.NewStatusProblem(404)
 	nosuch.Detail = "Sorry, that user does not exist."
 	return nosuch
@@ -158,7 +158,7 @@ var Unauthorized = problems.NewStatusProblem(401)
 
 func main() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/secrets", problems.StatusProblemHandler(Unauthorized))
+	mux.HandleFunc("/secrets", problems.ProblemHandler(Unauthorized))
 
 	server := http.Server{Handler: mux, Addr: ":8080"}
 	server.ListenAndServe()
